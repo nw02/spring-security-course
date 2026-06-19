@@ -2,6 +2,8 @@ package com.github.nw02.springsecsection1.config;
 
 import com.github.nw02.springsecsection1.exceptionHandling.CustomAccessDeniedHandler;
 import com.github.nw02.springsecsection1.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -9,6 +11,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.Collections;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -17,11 +23,23 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class ProjectSecurityConfigProd {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception{
-        http.sessionManagement(smc -> smc.invalidSessionUrl("/invalidSession").maximumSessions(1).maxSessionsPreventsLogin(true))
+        http.cors(corsConfig -> corsConfig.configurationSource(new CorsConfigurationSource() {
+            @Override
+            public @Nullable CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(Collections.singletonList("*"));
+                config.setAllowedMethods(Collections.singletonList("*"));
+                config.setAllowCredentials(true);
+                config.setAllowedHeaders(Collections.singletonList("*"));
+                config.setMaxAge(3600L);
+                return config;
+            }
+        }))
+                .sessionManagement(smc -> smc.invalidSessionUrl("/invalidSession").maximumSessions(1).maxSessionsPreventsLogin(true))
                 .redirectToHttps(redirect -> redirect.requestMatchers(request -> true))
                 .csrf(csrfConfig -> csrfConfig.disable());
         http.authorizeHttpRequests((requests) -> requests.
-                requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards").authenticated().
+                requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards", "/user").authenticated().
                 requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll());
         http.formLogin(withDefaults());
         http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint())); // hbc= HttpBasic config
