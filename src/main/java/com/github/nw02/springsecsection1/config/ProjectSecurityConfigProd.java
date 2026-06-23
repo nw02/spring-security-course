@@ -47,9 +47,13 @@ public class ProjectSecurityConfigProd {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .redirectToHttps((https) -> https.disable());
-        http.authorizeHttpRequests((requests) -> requests.
-                requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards", "/user").authenticated().
-                requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll());
+        http.authorizeHttpRequests((requests) -> requests
+                        .requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
+                        .requestMatchers("/myBalance").hasAuthority("VIEWBALANCE")
+                        .requestMatchers("/myLoans").hasAuthority("VIEWLOANS")
+                        .requestMatchers("/myCards").hasAuthority("VIEWCARDS")
+                        .requestMatchers("/user").authenticated()
+                .requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll());
         http.formLogin(withDefaults());
         http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint())); // hbc= HttpBasic config
         http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandler()));
