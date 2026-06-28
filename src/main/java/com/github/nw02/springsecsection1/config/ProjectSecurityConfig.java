@@ -2,7 +2,9 @@ package com.github.nw02.springsecsection1.config;
 
 import com.github.nw02.springsecsection1.exceptionHandling.CustomAccessDeniedHandler;
 import com.github.nw02.springsecsection1.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import com.github.nw02.springsecsection1.filter.AuthoritiesLoggingAfterFilter;
 import com.github.nw02.springsecsection1.filter.CsrfCookieFilter;
+import com.github.nw02.springsecsection1.filter.RequestValidationBeforeFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
@@ -45,8 +47,10 @@ public class ProjectSecurityConfig {
         })).csrf(crsfConfig -> crsfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                 .ignoringRequestMatchers("/contact", "/register")
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-                .redirectToHttps((https) -> https.disable());
+            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+            .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+            .addFilterAfter(new AuthoritiesLoggingAfterFilter(), BasicAuthenticationFilter.class)
+            .redirectToHttps((https) -> https.disable());
         http.authorizeHttpRequests((requests) -> requests
 //                .requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
 //                .requestMatchers("/myBalance").hasAuthority("VIEWBALANCE")
