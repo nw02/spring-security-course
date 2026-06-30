@@ -2,9 +2,7 @@ package com.github.nw02.springsecsection1.config;
 
 import com.github.nw02.springsecsection1.exceptionHandling.CustomAccessDeniedHandler;
 import com.github.nw02.springsecsection1.exceptionHandling.CustomBasicAuthenticationEntryPoint;
-import com.github.nw02.springsecsection1.filter.AuthoritiesLoggingAfterFilter;
-import com.github.nw02.springsecsection1.filter.CsrfCookieFilter;
-import com.github.nw02.springsecsection1.filter.RequestValidationBeforeFilter;
+import com.github.nw02.springsecsection1.filter.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +19,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -32,17 +31,18 @@ public class ProjectSecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception{
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         http.securityContext(contextConfig -> contextConfig.requireExplicitSave(false))
-            .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+            .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(corsConfig -> corsConfig.configurationSource(new CorsConfigurationSource() {
-            @Override
-            public @Nullable CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(Collections.singletonList("*"));
-                config.setAllowedMethods(Collections.singletonList("*"));
-                config.setAllowCredentials(true);
-                config.setAllowedHeaders(Collections.singletonList("*"));
-                config.setMaxAge(3600L);
-                return config;
+                @Override
+                public @Nullable CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(Collections.singletonList("*"));
+                    config.setAllowedMethods(Collections.singletonList("*"));
+                    config.setAllowCredentials(true);
+                    config.setAllowedHeaders(Collections.singletonList("*"));
+                    config.setExposedHeaders(Arrays.asList("Authorization"));
+                    config.setMaxAge(3600L);
+                    return config;
             }
         })).csrf(crsfConfig -> crsfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                 .ignoringRequestMatchers("/contact", "/register")
@@ -50,6 +50,8 @@ public class ProjectSecurityConfig {
             .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
             .addFilterAfter(new AuthoritiesLoggingAfterFilter(), BasicAuthenticationFilter.class)
+            .addFilterAfter(new JWTTokenGenerationFIlter(), BasicAuthenticationFilter.class)
+            .addFilterBefore(new JWTTokenValidatorFIlter(), BasicAuthenticationFilter.class)
             .redirectToHttps((https) -> https.disable());
         http.authorizeHttpRequests((requests) -> requests
 //                .requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
