@@ -35,10 +35,12 @@ public class JWTTokenValidatorFIlter extends OncePerRequestFilter {
                     if (null!=secretKey){
                         Claims claims =Jwts.parser().verifyWith(secretKey)
                                 .build().parseSignedClaims(jwt).getPayload();
+                                // parseSignedClaims compara a senha e transforma o conteiner em JSON e depois em Claims
                         String username = String.valueOf(claims.get("username"));
                         String authorities = String.valueOf(claims.get("authorities"));
                         Authentication authentication = new UsernamePasswordAuthenticationToken(username, null,
-                                AuthorityUtils.commaSeparatedStringToAuthorityList(authorities));
+                                AuthorityUtils.commaSeparatedStringToAuthorityList(authorities)); // null é a senha
+                                // Tranforma em GrantedAuthority
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }
